@@ -209,6 +209,8 @@ The repository **ships no real secrets**: `jwt.encryptKey` / `actor.signKey` in 
 
 Provider API keys (Alibaba Cloud / OpenAI etc.) never land in git nor in seed SQL — enter them in the admin console after deployment ("LLM Management → Credentials", stored AES-256-GCM encrypted). To rotate: edit `/etc/aiarsenal/env`, then `systemctl restart aiarsenal-api aiarsenal-mcp aiarsenal-llm`.
 
+On startup, api / mcp / ops each check whether `jwt.encryptKey` is still taken from `config.yaml`. If so, each emits one `level=WARN` line carrying an `insecureDefaults` field (currently `[jwt.encryptKey]`) and **do not block startup**. That line means the instance's key comes from the `config.yaml` committed to the repo (the public placeholder by default): when it is reachable from the internet, that key is effectively public and can be abused to sign tokens. Mind the order of operations — changing the key makes existing LLM credentials / Agent api_keys in the DB undecryptable, so an existing deployment must first copy the **currently active** key into `/etc/aiarsenal/env` and restart, re-enter the credentials in the console, and only then rotate to a random value. `deploy.sh` repeats the same warning. Running all three processes on one host produces three identical WARN lines, which is expected.
+
 ## 🗃️ Databases & Migrations
 
 - **Multi-database modeling**: 10 business databases on one instance (`aiarsenal` / `aa_skill` / `aa_llm` / `aa_mcp` / `aa_agent` / `aa_client` / `aa_project` / `aa_doc` / `aa_kb` / `aa_schedule`), isolated per module.

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -20,6 +21,10 @@ type Config struct {
 	Storage  StorageConfig  `mapstructure:"storage"`
 	Actor    ActorConfig    `mapstructure:"actor"`
 	Agent    AgentConfig    `mapstructure:"agent"`
+
+	// jwtKeyFromFile 标记 jwt.encryptKey 是否直接取自 config.yaml（未被环境变量覆盖）。
+	// 不导出、不参与反序列化，仅由 Load 填入，供 insecureDefaults 上报。
+	jwtKeyFromFile bool
 }
 
 // AgentConfig Agent 模块运行配置（v2：实例备份/持久卷等本机落盘路径）。
@@ -125,6 +130,9 @@ func Load() (*Config, error) {
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("read config: %w", err)
 	}
+	// 覆盖前先记下 yaml 原值：生效值仍等于它，说明密钥来自仓库而未被环境变量覆盖。
+	// 前提是 viper 没启用 AutomaticEnv/BindEnv（全仓无自动绑定，覆盖一律走下方 v.Set）。
+	yamlJwtKey := v.GetString("jwt.encryptKey")
 	// 密钥类配置支持环境变量覆盖（优先于 yaml）：仓库里的 yaml 只放开发占位值，
 	// 生产经 systemd EnvironmentFile（/etc/aiarsenal/env）注入真实密钥，绝不提交进 git。
 	// encryptKey 同时是 LLM 凭据的 AES 密钥——存量库换 key 前须先用旧 key 导出/重录凭据。
@@ -138,8 +146,47 @@ func Load() (*Config, error) {
 	if err := v.Unmarshal(c); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
+	c.jwtKeyFromFile = jwtKeyFromConfigFile(c.Jwt.EncryptKey, yamlJwtKey)
+	c.warnInsecureDefaults()
 	cfg = c
 	return c, nil
+}
+
+// jwtKeyFromConfigFile 判断生效的 jwt.encryptKey 是否取自随源码提交的 config.yaml。
+// 判据是「来源」而不是「强度」：比起比对硬编码占位值，这里只有一份真相，yaml 换值自动
+// 跟随，不会出现告警静默失效。空值也算取自该文件——它确实来自仓库里的配置。
+func jwtKeyFromConfigFile(effective, fromConfigFile string) bool {
+	return effective == fromConfigFile
+}
+
+// insecureDefaults 返回仍取自仓库默认值的敏感配置项，目前只覆盖 jwt.encryptKey，
+// 新增检测项在这里追加即可。暂不导出：消费者只有本包的启动告警。
+func (c *Config) insecureDefaults() []string {
+	var out []string
+	if c.jwtKeyFromFile {
+		out = append(out, "jwt.encryptKey")
+	}
+	return out
+}
+
+// warnInsecureDefaults 在敏感配置仍取自 config.yaml 时输出 WARN 级告警。
+//
+// 用 WARN 不用 ERROR：进程照常启动、请求不受影响，不构成失败；ERROR 会被 oncall 分级
+// 抓走，稀释真正的事故信号。不阻断启动是因为 api 侧尚无环境标识（APP_ENV 仅 llm 网关
+// 读取），拒绝会让存量部署升级后起不来。文案只陈述风险不给指令——换密钥会使库内 LLM
+// 凭据失效，注意事项在 README，日志里喊一句容易让人不看文档就动手。
+func (c *Config) warnInsecureDefaults() {
+	items := c.insecureDefaults()
+	if len(items) == 0 {
+		return
+	}
+	slog.Warn(
+		"敏感配置仍取自随源码提交的 config.yaml：若本实例对公网可达，"+
+			"该密钥等同公开，存在被冒用签发 token 的风险；"+
+			"更换方式见 README「密钥与凭据（部署必读）」一节"+
+			"（该键同时加密库内 LLM 凭据，换值会使既有密文失效）。",
+		"insecureDefaults", items,
+	)
 }
 
 // Get 已加载的全局配置

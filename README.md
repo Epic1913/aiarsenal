@@ -209,6 +209,8 @@ sudo bash deploy.sh prod         # 生产环境：HTTPS + 通配符证书
 
 供应商 API Key（阿里云 / OpenAI 等）不落 git、不入种子 SQL——部署后在管理后台「LLM 管理 → 凭据」录入（AES-256-GCM 加密落库）。轮换密钥：改 `/etc/aiarsenal/env` 后 `systemctl restart aiarsenal-api aiarsenal-mcp aiarsenal-llm`。
 
+启动时 api / mcp / ops 会各自检查 `jwt.encryptKey` 是否仍取自 `config.yaml`：是则各输出一条 `level=WARN` 日志（带 `insecureDefaults` 字段，当前值为 `[jwt.encryptKey]`），**不阻断启动**。出现这条日志说明该实例的密钥写在随源码提交的 `config.yaml` 里（默认值即公开占位值），公网可达时该密钥等同公开，存在被冒用签发 token 的风险。处理顺序要注意：换密钥会使库内既有 LLM 凭据 / Agent api_key 无法解密，存量部署应先把**当前正在用的**密钥原值写入 `/etc/aiarsenal/env` 再重启，待后台重录凭据后才轮换成随机值——`deploy.sh` 对这一步有同样的提醒。同一台机同时跑三个进程时会看到三条相同的 WARN，属正常。
+
 ## 🗃️ 数据库与迁移
 
 - **多库建模**：10 个业务库同实例（`aiarsenal` / `aa_skill` / `aa_llm` / `aa_mcp` / `aa_agent` / `aa_client` / `aa_project` / `aa_doc` / `aa_kb` / `aa_schedule`），模块间数据隔离。
