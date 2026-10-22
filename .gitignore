@@ -33,9 +33,13 @@ client/**/node_modules/
 client/shared/frontend/dist/
 client/win/src-tauri/target/
 client/mac/src-tauri/target/
-# Tauri 图标由用户本机生成（npx tauri icon <png>），不入库
-client/**/src-tauri/icons/
+# Tauri 图标：编译期 tauri::generate_context! 必须读取，4 个必需文件入库（CI 依赖）；
+# npx tauri icon 生成的其余尺寸变体仍不入库
+client/**/src-tauri/icons/*
 !client/**/src-tauri/icons/.gitkeep
+!client/**/src-tauri/icons/icon.png
+!client/**/src-tauri/icons/icon.icns
+!client/**/src-tauri/icons/icon.ico
 client/**/src-tauri/gen/
 
 # 部署时旧 dist 备份（本地保留，不入库）
