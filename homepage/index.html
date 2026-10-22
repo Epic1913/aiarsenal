@@ -6,6 +6,9 @@
   <title>AI Arsenal — 企业级 AI 应用一体化管理平台</title>
   <meta name="description" content="AI Arsenal 把 Skill、MCP、LLM、Agent 与文档知识库放进同一个管理后台，自带 OpenAI 兼容网关、MCP 网关与 Mac/Windows 桌面客户端。开源，自行部署。" />
   <link rel="icon" href="assets/favicon.ico" />
+  <link rel="alternate" hreflang="zh" href="https://aiarsenal.cc/" />
+  <link rel="alternate" hreflang="en" href="https://aiarsenal.cc/en/" />
+  <link rel="alternate" hreflang="x-default" href="https://aiarsenal.cc/" />
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
@@ -13,7 +16,7 @@
   <nav>
     <div class="wrap nav-inner">
       <a class="brand" href="#top">
-        <img src="assets/logo.png" alt="AI Arsenal logo" />
+        <img src="assets/logo.png" alt="AI Arsenal logo" width="28" height="28" />
         <span>AI Arsenal</span>
       </a>
       <div class="nav-links">
@@ -24,6 +27,8 @@
         <a href="#about">关于</a>
       </div>
       <div class="nav-actions">
+        <a class="lang" href="/en/" data-lang="/en/">EN</a>
+        <span class="nav-sep"></span>
         <a href="https://gitee.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">Gitee</a>
         <span class="nav-sep"></span>
         <a href="https://github.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">GitHub ↗</a>
@@ -222,9 +227,10 @@ sudo bash deploy.sh test         # 测试环境：纯 HTTP + /etc/hosts</pre>
 
   <footer>
     <div class="wrap foot-inner">
-      <div class="foot-brand"><img src="assets/logo.png" alt="logo" /><span>AI Arsenal</span><span class="micro">© 2026</span></div>
+      <div class="foot-brand"><img src="assets/logo.png" alt="logo" width="20" height="20" /><span>AI Arsenal</span><span class="micro">© 2026</span></div>
       <div class="foot-meta">
         <span>Powered by Gin + Vben</span>
+        <a href="/en/">EN</a>
         <a href="https://github.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">GitHub</a>
         <a href="https://gitee.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">Gitee</a>
         <a href="https://github.com/aiarsenal/aiarsenal#readme" target="_blank" rel="noopener">README</a>
@@ -243,6 +249,13 @@ sudo bash deploy.sh test         # 测试环境：纯 HTTP + /etc/hosts</pre>
         }
       });
     }, { rootMargin: '200px' }).observe(document.getElementById('brandVideo'));
+    // 语言切换保留当前锚点
+    document.querySelectorAll('a[data-lang]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        location.href = a.dataset.lang + (location.hash || '');
+      });
+    });
   </script>
 </body>
 </html>

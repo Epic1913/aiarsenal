@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Arsenal — Enterprise AI Applications, One Unified Platform</title>
+  <meta name="description" content="AI Arsenal manages Skills, MCP, LLM, agents and document knowledge bases from one admin console, with an OpenAI-compatible gateway, an MCP gateway, and Mac / Windows desktop clients. Open source, self-hosted." />
+  <link rel="icon" href="../assets/favicon.ico" />
+  <link rel="alternate" hreflang="zh" href="https://aiarsenal.cc/" />
+  <link rel="alternate" hreflang="en" href="https://aiarsenal.cc/en/" />
+  <link rel="alternate" hreflang="x-default" href="https://aiarsenal.cc/" />
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <nav>
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top">
+        <img src="../assets/logo.png" alt="AI Arsenal logo" width="28" height="28" />
+        <span>AI Arsenal</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Capabilities</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#quickstart">Quick Start</a>
+        <a href="#tech">Tech Stack</a>
+        <a href="#about">About</a>
+      </div>
+      <div class="nav-actions">
+        <a class="lang" href="/" data-lang="/">中文</a>
+        <span class="nav-sep"></span>
+        <a href="https://gitee.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">Gitee</a>
+        <span class="nav-sep"></span>
+        <a href="https://github.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero" id="top">
+    <div class="wrap">
+      <div class="hero-top">
+        <span class="micro">Open source · Self-hosted · Apache-2.0</span>
+        <span class="micro">Built end-to-end with GLM</span>
+      </div>
+      <h1>Enterprise AI Applications<br />One Unified Platform</h1>
+      <p class="sub">
+        Skills, MCP, LLM, agents, and document knowledge bases — managed from a single admin console.
+        Ships with an OpenAI-compatible gateway and an MCP gateway, plus Mac / Windows desktop
+        clients, deployed on your own servers.
+      </p>
+      <p class="mod-index">SKILL · LLM · MCP · DOC · KB · PROJECT · AGENT · CLIENT</p>
+      <div class="hero-cta">
+        <a class="btn-solid" href="https://github.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">GitHub Repository ↗</a>
+        <a class="btn-ghost" href="#quickstart">Self-hosting Guide</a>
+      </div>
+      <div class="stats">
+        <div><div class="num">13</div><div class="label">Modules</div></div>
+        <div><div class="num">60+</div><div class="label">Admin pages</div></div>
+        <div><div class="num">200</div><div class="label">Button-level permissions</div></div>
+        <div><div class="num">529</div><div class="label">API routes</div></div>
+      </div>
+      <figure class="hero-video">
+        <video id="brandVideo" muted loop playsinline preload="none" poster="../assets/cover.png" src="../assets/brand.mp4"></video>
+      </figure>
+    </div>
+  </header>
+
+  <!-- 01 Capabilities -->
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="idx">01</span>
+        <h2>Core Capabilities</h2>
+        <span class="meta">8 modules · all shipped</span>
+      </div>
+      <ul class="ledger">
+        <li>
+          <span class="no">01</span>
+          <div class="name"><h3>System Administration</h3><span class="code">SYS</span></div>
+          <p>Users / roles / menus / departments / posts · permissions down to buttons and data rows, enforced by Casbin RBAC · login and operation auditing</p>
+        </li>
+        <li>
+          <span class="no">02</span>
+          <div class="name"><h3>Skill Management</h3><span class="code">SKILL</span></div>
+          <p>zip upload &amp; parsing · security-scan interception (secrets / dangerous scripts) · vector retrieval · iFlytek marketplace import</p>
+        </li>
+        <li>
+          <span class="no">03</span>
+          <div class="name"><h3>LLM Management</h3><span class="code">LLM</span></div>
+          <p>OpenAI-compatible plus native Anthropic / Gemini endpoints · virtual keys · three-tier budget billing · routing, polling &amp; health probing</p>
+        </li>
+        <li>
+          <span class="no">04</span>
+          <div class="name"><h3>MCP Management</h3><span class="code">MCP</span></div>
+          <p>SSE / streamable-http dual-protocol gateway · OAuth clients &amp; tokens · $smart vector routing · enterprise capability toolsets</p>
+        </li>
+        <li>
+          <span class="no">05</span>
+          <div class="name"><h3>Docs &amp; Knowledge Base</h3><span class="code">DOC / KB</span></div>
+          <p>upload / preview / chunked vector embeddings · semantic retrieval · row-level read-write authorization · scheduled sync from web / database / API / object-storage sources</p>
+        </li>
+        <li>
+          <span class="no">06</span>
+          <div class="name"><h3>Project Management</h3><span class="code">PROJECT</span></div>
+          <p>projects / tasks / boards · milestones · reports &amp; scheduling · custom fields, bound to Agent / Skill / KB / LLM / MCP</p>
+        </li>
+        <li>
+          <span class="no">07</span>
+          <div class="name"><h3>Agent Management</h3><span class="code">AGENT</span></div>
+          <p>instance lifecycle (Docker / Tencent Cloud CVM) · remote desktop · web terminal · workspace files · backup &amp; rolling release · audit &amp; risk monitoring</p>
+        </li>
+        <li>
+          <span class="no">08</span>
+          <div class="name"><h3>Desktop Client</h3><span class="code">CLIENT</span></div>
+          <p>Tauri 2 on both platforms · install / start-stop OpenClaw / Hermes / Obsidian · WeChat QR binding · Mac / Windows desktop nodes (screen capture / mouse &amp; keyboard control)</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 02 Roadmap -->
+  <section id="roadmap">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="idx">02</span>
+        <h2>Roadmap</h2>
+        <span class="meta">What's next</span>
+      </div>
+      <ul class="ledger">
+        <li>
+          <span class="no">01</span>
+          <div class="name"><h3>Client channels</h3><span class="code">CHANNEL</span></div>
+          <p><span class="status">Planned</span>WeChat is live; DingTalk / WeCom / Feishu / Telegram are next</p>
+        </li>
+        <li>
+          <span class="no">02</span>
+          <div class="name"><h3>Desktop node coverage</h3><span class="code">DESKTOP NODE</span></div>
+          <p><span class="status">Planned</span>Screen recording &amp; camera capture (screen.record / camera), completed on both Mac and Windows</p>
+        </li>
+        <li>
+          <span class="no">03</span>
+          <div class="name"><h3>Unified retrieval</h3><span class="code">RETRIEVAL</span></div>
+          <p><span class="status">Planned</span>docsource already pulls from Feishu / DingTalk / Tencent Docs / Notion; next, unify retrieval with in-app documents and knowledge bases</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 03 Quick Start -->
+  <section id="quickstart">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="idx">03</span>
+        <h2>Quick Start</h2>
+        <span class="meta">No hosted demo · your data stays on your servers</span>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="no">1</div>
+          <div>
+            <h3>Get the source</h3>
+            <p>Clone the repository from GitHub and prepare the runtime as described in the README (Node / Go / PostgreSQL + pgvector / Redis).</p>
+            <pre>git clone https://github.com/aiarsenal/aiarsenal.git
+cd aiarsenal</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="no">2</div>
+          <div>
+            <h3>One-command local stack (macOS / Windows)</h3>
+            <p>The script initializes 10 databases (baseline SQL is baked in, no migrations), builds frontend and backend, and starts three services.</p>
+            <pre>bash scripts/local-test.sh deploy      # macOS
+bash scripts/local-test-win.sh deploy  # Windows (Git Bash)</pre>
+            <p class="note">Default account <code>hi / aiarsenal123</code> (see "Default accounts" in the README; change it immediately after first login).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="no">3</div>
+          <div>
+            <h3>Server deployment (Ubuntu)</h3>
+            <p>One command for systemd + nginx; desktop clients (macOS .dmg / Windows .msi) are available from GitHub Releases and connect to your own server.</p>
+            <pre>sudo bash deploy.sh rebuild-db   # first-time database setup (⚠️ wipes and rebuilds)
+sudo bash deploy.sh test         # test environment: plain HTTP + /etc/hosts</pre>
+            <p class="note">Full steps and desktop-client notes in the <a href="https://github.com/aiarsenal/aiarsenal#readme" target="_blank" rel="noopener">README</a> · Downloads in <a href="https://github.com/aiarsenal/aiarsenal/releases" target="_blank" rel="noopener">Releases</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 Tech Stack -->
+  <section id="tech">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="idx">04</span>
+        <h2>Tech Stack</h2>
+        <span class="meta">Gin + Vben</span>
+      </div>
+      <div class="tech-rows">
+        <div class="row"><div class="k">Backend</div><div class="v">Go 1.26 · Gin · GORM (DDD four-layer)</div></div>
+        <div class="row"><div class="k">Frontend</div><div class="v">Vue 3 · vue-vben-admin 5.7 (Ant Design Vue) · Vite · vue-i18n (zh + en)</div></div>
+        <div class="row"><div class="k">Databases</div><div class="v">PostgreSQL 16 (10 databases on one instance; pgvector enabled on aa_skill / aa_doc / aa_kb) · Redis</div></div>
+        <div class="row"><div class="k">Desktop</div><div class="v">Tauri 2 (Rust + Vue 3, Mac / Windows)</div></div>
+        <div class="row"><div class="k">Agent runtime</div><div class="v">runtime-go: local Docker (default) + Tencent Cloud CVM provider (switch via config/tencent.yaml)</div></div>
+        <div class="row"><div class="k">Auth</div><div class="v">JWT (HS256) · Casbin RBAC · credentials encrypted at rest with AES-256-GCM</div></div>
+        <div class="row"><div class="k">AI</div><div class="v">Built end-to-end with GLM</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 About -->
+  <section id="about">
+    <div class="wrap about-grid">
+      <div>
+        <span class="idx" style="font-family: var(--mono); font-size: 13px; color: var(--accent)">05</span>
+        <h2 style="margin-top: 8px">About the Project</h2>
+      </div>
+      <div class="txt">
+        <p>
+          AI Arsenal is an enterprise AI application management platform, co-written end to end with GLM. All eight modules —
+          system, Skill, LLM, MCP, docs &amp; knowledge base, projects, agents, and clients — are implemented and open-sourced under
+          <a href="https://github.com/aiarsenal/aiarsenal/blob/master/LICENSE" target="_blank" rel="noopener">Apache-2.0</a>.
+          Deployment trouble? Open an Issue. Improvements are welcome as PRs.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <div class="foot-brand"><img src="../assets/logo.png" alt="logo" width="20" height="20" /><span>AI Arsenal</span><span class="micro">© 2026</span></div>
+      <div class="foot-meta">
+        <span>Powered by Gin + Vben</span>
+        <a href="https://github.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://gitee.com/aiarsenal/aiarsenal" target="_blank" rel="noopener">Gitee</a>
+        <a href="https://github.com/aiarsenal/aiarsenal#readme" target="_blank" rel="noopener">README</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 懒加载视频:进入视口再播放(preload=none,首屏不拉 5.9MB)
+    new IntersectionObserver(function (entries, obs) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          var v = e.target;
+          v.play().catch(function () {});
+          obs.unobserve(v);
+        }
+      });
+    }, { rootMargin: '200px' }).observe(document.getElementById('brandVideo'));
+    // 语言切换保留当前锚点
+    document.querySelectorAll('a[data-lang]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        location.href = a.dataset.lang + (location.hash || '');
+      });
+    });
+  </script>
+</body>
+</html>

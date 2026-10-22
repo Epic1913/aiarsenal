@@ -44,6 +44,11 @@ nav {
 @media (min-width: 820px) { .nav-links { display: flex; } }
 .nav-actions { display: flex; align-items: center; gap: 16px; font-size: 14px; }
 .nav-actions a:hover { color: var(--accent); }
+.nav-actions .lang {
+  border: 1px solid var(--line); padding: 2px 9px; border-radius: 4px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
+}
+.nav-actions .lang:hover { border-color: var(--ink); color: var(--ink); }
 .nav-sep { width: 1px; height: 14px; background: var(--line); }
 
 /* ── Hero ── */
