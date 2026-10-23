@@ -34,9 +34,12 @@ type Deps struct {
 	SkillPkg    *controller.SkillPackageController
 	SkillMarket *controller.SkillMarketController
 	MenuRepo    repository.IMenuRepository
+	DeptRepo    repository.IDeptRepository
+	OperLogRepo repository.IOperLogRepository
+	AuditMeta   *middleware.AuditMeta
 	// LLM 网关模块（llm 库，跨库软引用 aa_user）
-	LLMConfig       *controller.LLMConfigController
-	LLMKey          *controller.LLMKeyController
+	LLMConfig  *controller.LLMConfigController
+	LLMKey     *controller.LLMKeyController
 	LLMOrg     *controller.LLMOrgController
 	LLMMonitor *controller.LLMMonitorController
 	// 数据看板（LLM 用量 / 技能资产，只读聚合）
@@ -101,6 +104,22 @@ type Deps struct {
 	Schedule *controller.ScheduleController
 }
 
+// auditChain v1 根分组的公共中间件。
+//
+// 单独抽成函数只有一个理由：让"审计到底有没有挂上"可以被测试固定。
+// 直接写在 Register 里的话，删掉这一行不会有任何用例变红——而这正是
+// 最容易发生的回归：某次重构顺手改掉分组，审计从此静默消失。
+func auditChain(d Deps) []gin.HandlerFunc {
+	meta := d.AuditMeta
+	if meta == nil {
+		meta = middleware.NewAuditMeta(d.MenuRepo, d.DeptRepo)
+	}
+	return []gin.HandlerFunc{
+		middleware.CORS(),
+		middleware.OperLog(d.OperLogRepo, meta),
+	}
+}
+
 // Register 注册全部路由
 func Register(r *gin.Engine, d Deps) {
 	r.Use(middleware.Recovery())
@@ -113,7 +132,9 @@ func Register(r *gin.Engine, d Deps) {
 	r.NoRoute(middleware.NoRouteHandler())
 
 	v1 := r.Group("/api/v1")
-	v1.Use(middleware.CORS())
+	// 审计挂在 v1 根分组：不依赖各业务分组是否记得加，漏挂一个分组就是漏一片审计。
+	// 中间件在 c.Next() 之后读取 JWTAuth 写入的身份，未登录请求自然不记录。
+	v1.Use(auditChain(d)...)
 
 	// 公开：验证码
 	pub := v1.Group("/pub")

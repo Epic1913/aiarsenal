@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"time"
 
 	rt "github.com/aiarsenal/runtime-go"
 	_ "github.com/aiarsenal/runtime-go/localdocker"
@@ -23,6 +24,7 @@ import (
 	"aiarsenal/infrastructure/runtimenop"
 	"aiarsenal/infrastructure/scheduler"
 	"aiarsenal/interfaces/controller"
+	"aiarsenal/interfaces/middleware"
 	"aiarsenal/interfaces/router"
 	"aiarsenal/logx"
 )
@@ -492,6 +494,13 @@ func main() {
 	// 6. gin 装配
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	auditMeta := middleware.NewAuditMeta(menuRepo, deptRepo)
+	warmCtx, warmCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	if err := auditMeta.Warm(warmCtx); err != nil {
+		slog.Warn("审计展示字段预热失败，首个写请求会补加载", "err", err)
+	}
+	warmCancel()
+
 	router.Register(r, router.Deps{
 		Captcha:        captchaCtl,
 		Login:          loginCtl,
@@ -516,6 +525,9 @@ func main() {
 		SkillPkg:       skillPkgCtl,
 		SkillMarket:    skillMarketCtl,
 		MenuRepo:       menuRepo,
+		DeptRepo:       deptRepo,
+		AuditMeta:      auditMeta,
+		OperLogRepo:    operLogRepo,
 		LLMConfig:      llmConfigCtl,
 		LLMKey:         llmKeyCtl,
 		ReviewOrder:    reviewOrderCtl,
