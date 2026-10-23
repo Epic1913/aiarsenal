@@ -184,7 +184,7 @@ jobs:
           merge-multiple: true
 
       - name: Attach installers to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           # 匹配 dmg / msi / nsis 三类安装包(文件名含空格不影响 glob 匹配)
           files: |
