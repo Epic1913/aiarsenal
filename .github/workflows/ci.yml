@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -87,7 +87,7 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -111,7 +111,7 @@ jobs:
       run:
         working-directory: ui
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # pnpm 版本取自 ui/package.json 的 packageManager 字段(pnpm@10.34.4);
       # repo 根目录无 package.json,须显式指向 ui/package.json 让 action-setup 读取。
@@ -140,7 +140,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -168,7 +168,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
