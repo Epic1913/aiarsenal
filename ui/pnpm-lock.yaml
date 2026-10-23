@@ -454,8 +454,8 @@ catalogs:
       specifier: ^4.19.14
       version: 4.19.17
     watermark-js-plus:
-      specifier: ^1.6.3
-      version: 1.6.3
+      specifier: ^1.6.6
+      version: 1.6.6
     yaml-eslint-parser:
       specifier: ^2.0.0
       version: 2.0.0
@@ -1359,7 +1359,7 @@ importers:
         version: 5.1.0(@vue/compiler-sfc@3.5.38)(pinia@3.0.4(typescript@6.0.3)(vue@3.5.38(typescript@6.0.3)))(vite@8.0.16(@types/node@26.0.0)(esbuild@0.28.1)(jiti@2.7.0)(less@4.6.6)(sass-embedded@1.100.0)(sass@1.101.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@6.0.3))
       watermark-js-plus:
         specifier: 'catalog:'
-        version: 1.6.3
+        version: 1.6.6
 
   packages/effects/layouts:
     dependencies:
@@ -6034,6 +6034,7 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   crypto-random-string@2.0.0:
     resolution: {integrity: sha512-v1plID3y9r/lPhviJ1wrXpLeyUIGAZ2SHNYTEapm7/8A9nLPoyvVp3RK/EPFqn5kEznyWgYZNsRtYYIWbuG8KA==}
@@ -10057,8 +10058,8 @@ packages:
   warning@4.0.3:
     resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
 
-  watermark-js-plus@1.6.3:
-    resolution: {integrity: sha512-iCLOGf70KacIwjGF9MDViYxQcRiVwOH7l42qDHLeE2HeUsQD1EQuUC9cKRG/4SErTUmdqV3yf5WnKk2dRARHPQ==}
+  watermark-js-plus@1.6.6:
+    resolution: {integrity: sha512-TReFUESd36dq8KHLeWzw3NAJXTc3/h/Clip+VWE8SxGx6Digfwxy/NPrLYnFDddw/8kUv/7p0Ohgpperzpjjjw==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -18992,7 +18993,7 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  watermark-js-plus@1.6.3: {}
+  watermark-js-plus@1.6.6: {}
 
   webidl-conversions@3.0.1: {}
 
