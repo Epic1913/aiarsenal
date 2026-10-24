@@ -23,7 +23,9 @@ type IUserRepository interface {
 	List(ctx context.Context, deptId, mobile, status, keyWords string, pageNum, pageSize int) (list []*entity.User, total int64, err error)
 	EnrichUsers(ctx context.Context, users []*entity.User) ([]*model.UserRoleDeptRes, error)
 	Add(ctx context.Context, u *entity.User, roleIds, postIds []string) (string, error)
-	Edit(ctx context.Context, u *entity.User, roleIds, postIds []string) error
+	// Edit 更新档案；setAdmin 指针语义：nil=请求体未携带 isAdmin（不写该列），
+	// 非 nil=显式落库（含收权 0）。合法取值由服务层闸门保证。
+	Edit(ctx context.Context, u *entity.User, roleIds, postIds []string, setAdmin *int) error
 	Delete(ctx context.Context, userIds []string) error
 	ResetPwd(ctx context.Context, userId string, pwd, salt string) error
 	ChangeStatus(ctx context.Context, userId string, status uint) error

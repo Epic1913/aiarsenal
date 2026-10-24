@@ -192,12 +192,18 @@ func (r *UserRepository) Add(ctx context.Context, u *entity.User, roleIds, postI
 	return u.UserId, nil
 }
 
-func (r *UserRepository) Edit(ctx context.Context, u *entity.User, roleIds, postIds []string) error {
-	// is_admin 单列显式写：Updates 会跳过零值，超管"收回管理员"（1→0）会静默失效。
-	// 该列能写进来的取值已由服务层闸门保证（R1/R3），这里只负责如实落库。
-	if err := r.db.WithContext(ctx).Model(&entity.User{}).Where("user_id = ?", u.UserId).
-		Update("is_admin", u.IsAdmin).Error; err != nil {
-		return err
+// Edit 更新档案 + 替换角色/岗位。
+//
+// setAdmin 为 nil（请求体没带 isAdmin，如 UI 编辑表单）时不写 is_admin 列；
+// 非 nil 才单列显式落库——GORM Updates 跳过零值会让「收权 1→0」静默失效，
+// 而把缺省当 0 写库又会把 UI 编辑变成静默降级。能落进来的取值已由服务层
+// 闸门保证，这里只负责如实执行两种意图。
+func (r *UserRepository) Edit(ctx context.Context, u *entity.User, roleIds, postIds []string, setAdmin *int) error {
+	if setAdmin != nil {
+		if err := r.db.WithContext(ctx).Model(&entity.User{}).Where("user_id = ?", u.UserId).
+			Update("is_admin", *setAdmin).Error; err != nil {
+			return err
+		}
 	}
 	if err := r.db.WithContext(ctx).Model(&entity.User{}).Where("user_id = ?", u.UserId).Updates(u).Error; err != nil {
 		return err

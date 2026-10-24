@@ -17,6 +17,8 @@ type fakeUserRepo struct {
 	repository.IUserRepository
 	added  *entity.User
 	edited *entity.User
+	// editSetAdmin 记录 Edit 收到的 isAdmin 指针：nil=仓储不写该列，非 nil=显式落库。
+	editSetAdmin *int
 	// entities 是"数据库里现存"的用户记录（按 user_id 取），编辑路径的现状比对与
 	// 操作者身份都从这查——操作者与目标必须能区分，闸门测试才立得住。
 	curUsers           map[string]*entity.User
@@ -37,8 +39,9 @@ func (f *fakeUserRepo) Add(ctx context.Context, u *entity.User, roleIds, postIds
 	return "uid-1", nil
 }
 
-func (f *fakeUserRepo) Edit(ctx context.Context, u *entity.User, roleIds, postIds []string) error {
+func (f *fakeUserRepo) Edit(ctx context.Context, u *entity.User, roleIds, postIds []string, setAdmin *int) error {
 	f.edited = u
+	f.editSetAdmin = setAdmin
 	return nil
 }
 
@@ -84,6 +87,8 @@ func newTestUserService(repo *fakeUserRepo) *UserService {
 func ordinaryUser(id string) *entity.User { return &entity.User{UserId: id, IsAdmin: 0} }
 
 func superUser(id string) *entity.User { return &entity.User{UserId: id, IsAdmin: 1} }
+
+func ip(v int) *int { return &v }
 
 // TestAddRejectsAdminFlagFromNonAdmin R1 的建档侧回归用例。
 //
@@ -149,7 +154,7 @@ func TestEditRejectsSettingAdminFlagFromNonSuper(t *testing.T) {
 	svc := newTestUserService(repo)
 
 	err := svc.Edit(context.Background(),
-		&entity.User{UserId: "u-2", IsAdmin: 1}, nil, nil, "u-1")
+		&entity.User{UserId: "u-2"}, nil, nil, ip(1), "u-1")
 
 	if err == nil {
 		t.Fatal("非超管把普通用户改成超管应当被拒，实际通过")
@@ -160,7 +165,8 @@ func TestEditRejectsSettingAdminFlagFromNonSuper(t *testing.T) {
 }
 
 // TestEditRejectsModifyingAdminFromNonSuper R3 目标保护：编辑权限者不能修改管理员
-// （含改档、改角色、改 isAdmin 任何组合）。
+// （含改档、改角色、改 isAdmin 任何组合）。请求形状按 UI 的来：表单回填白名单
+// 不含 isAdmin，编辑请求体永远缺省该字段。
 func TestEditRejectsModifyingAdminFromNonSuper(t *testing.T) {
 	repo := &fakeUserRepo{curUsers: map[string]*entity.User{
 		"u-1": ordinaryUser("u-1"),
@@ -169,7 +175,7 @@ func TestEditRejectsModifyingAdminFromNonSuper(t *testing.T) {
 	svc := newTestUserService(repo)
 
 	err := svc.Edit(context.Background(),
-		&entity.User{UserId: "u-9", IsAdmin: 1}, nil, nil, "u-1")
+		&entity.User{UserId: "u-9"}, nil, nil, nil, "u-1")
 
 	if err == nil {
 		t.Fatal("非超管修改管理员账号应当被拒，实际通过")
@@ -189,7 +195,7 @@ func TestEditRejectsSelfGrantChange(t *testing.T) {
 	svc := newTestUserService(repo)
 
 	err := svc.Edit(context.Background(),
-		&entity.User{UserId: "u-1"}, []string{"role-b"}, nil, "u-1")
+		&entity.User{UserId: "u-1"}, []string{"role-b"}, nil, nil, "u-1")
 
 	if err == nil {
 		t.Fatal("借编辑接口改自己的角色应当被拒，实际通过")
@@ -208,7 +214,7 @@ func TestEditAllowsGrantChangeOnOthers(t *testing.T) {
 	svc := newTestUserService(repo)
 
 	err := svc.Edit(context.Background(),
-		&entity.User{UserId: "u-2", Mobile: "13800000000"}, []string{"role-b"}, nil, "u-1")
+		&entity.User{UserId: "u-2", Mobile: "13800000000"}, []string{"role-b"}, nil, nil, "u-1")
 
 	if err != nil {
 		t.Fatalf("编辑权限者给普通用户分配角色被误拦: %v", err)
@@ -230,7 +236,7 @@ func TestEditAllowsUnchangedSelfGrants(t *testing.T) {
 
 	err := svc.Edit(context.Background(),
 		&entity.User{UserId: "u-1", Mobile: "13800000000"},
-		[]string{"role-b", "role-a"}, []string{"post-1"}, "u-1")
+		[]string{"role-b", "role-a"}, []string{"post-1"}, nil, "u-1")
 
 	if err != nil {
 		t.Fatalf("自己改普通档案、角色岗位原样回传被误拦: %v", err)
@@ -240,7 +246,7 @@ func TestEditAllowsUnchangedSelfGrants(t *testing.T) {
 	}
 }
 
-// TestEditAllowsAdminFlagFromAdmin 超管编辑任意账号（含授予 isAdmin）不受影响，
+// TestEditAllowsAdminFlagFromAdmin 超管编辑任意账号（含显式授予 isAdmin）不受影响，
 // 且不做多余查询。
 func TestEditAllowsAdminFlagFromAdmin(t *testing.T) {
 	repo := &fakeUserRepo{curUsers: map[string]*entity.User{
@@ -250,7 +256,7 @@ func TestEditAllowsAdminFlagFromAdmin(t *testing.T) {
 	svc := newTestUserService(repo)
 
 	err := svc.Edit(context.Background(),
-		&entity.User{UserId: "u-2", IsAdmin: 1}, []string{"role-x"}, nil, "u-9")
+		&entity.User{UserId: "u-2"}, []string{"role-x"}, nil, ip(1), "u-9")
 
 	if err != nil {
 		t.Fatalf("超管授予 isAdmin 应当通过，实际 %v", err)
@@ -258,8 +264,51 @@ func TestEditAllowsAdminFlagFromAdmin(t *testing.T) {
 	if repo.getEditCalls != 0 {
 		t.Fatalf("超管路径不应为了比对而多查一次库，实际调用 GetEditUser %d 次", repo.getEditCalls)
 	}
-	if repo.edited == nil || repo.edited.IsAdmin != 1 {
-		t.Fatalf("目标用户状态异常: %+v", repo.edited)
+	if repo.edited == nil || repo.editSetAdmin == nil || *repo.editSetAdmin != 1 {
+		t.Fatalf("isAdmin 未显式落库: edited=%+v setAdmin=%v", repo.edited, repo.editSetAdmin)
+	}
+}
+
+// TestEditOmittingAdminFlagKeepsFlag UI 回归用例（评审抓出的静默降级）：
+// 编辑表单回填白名单不含 isAdmin，请求体永远缺省该字段。仓储对 nil 不得写
+// is_admin 列——否则超管在界面上改任何管理员的手机号都会把账号降级为普通用户，
+// 且基线种子只有一个超管，界面上授不回来。
+func TestEditOmittingAdminFlagKeepsFlag(t *testing.T) {
+	repo := &fakeUserRepo{curUsers: map[string]*entity.User{
+		"u-9": superUser("u-9"),
+	}}
+	svc := newTestUserService(repo)
+
+	err := svc.Edit(context.Background(),
+		&entity.User{UserId: "u-9", Mobile: "13900000000"}, nil, nil, nil, "u-9")
+
+	if err != nil {
+		t.Fatalf("超管编辑管理员档案（缺省 isAdmin）被误拦: %v", err)
+	}
+	if repo.edited == nil {
+		t.Fatal("档案修改未落库")
+	}
+	if repo.editSetAdmin != nil {
+		t.Fatal("请求体缺省 isAdmin 时仓储不得写该列，实际收到了显式写")
+	}
+}
+
+// TestEditExplicitZeroDemotesAdmin 收权路径必须保持可达：超管显式传 0 才落 0——
+// 这是对「GORM 零值跳过导致收回管理员从未真正落库」缺陷的修复语义。
+func TestEditExplicitZeroDemotesAdmin(t *testing.T) {
+	repo := &fakeUserRepo{curUsers: map[string]*entity.User{
+		"u-9": superUser("u-9"),
+	}}
+	svc := newTestUserService(repo)
+
+	err := svc.Edit(context.Background(),
+		&entity.User{UserId: "u-9"}, nil, nil, ip(0), "u-9")
+
+	if err != nil {
+		t.Fatalf("超管显式收权被误拦: %v", err)
+	}
+	if repo.editSetAdmin == nil || *repo.editSetAdmin != 0 {
+		t.Fatalf("显式 0 未落库: setAdmin=%v", repo.editSetAdmin)
 	}
 }
 
@@ -273,7 +322,7 @@ func TestCallerWithoutRecordRejected(t *testing.T) {
 		t.Fatal("操作者记录缺失时建档应当被拒")
 	}
 	if err := svc.Edit(context.Background(),
-		&entity.User{UserId: "u-2"}, nil, nil, ""); err == nil {
+		&entity.User{UserId: "u-2"}, nil, nil, nil, ""); err == nil {
 		t.Fatal("零值 callerId 不应被当成系统调用放行")
 	}
 }

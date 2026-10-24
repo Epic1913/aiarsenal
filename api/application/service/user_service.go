@@ -146,7 +146,13 @@ func (s *UserService) Add(ctx context.Context, u *entity.User, password string, 
 	return nil
 }
 
-func (s *UserService) Edit(ctx context.Context, u *entity.User, roleIds, postIds []string, callerId string) error {
+// Edit 编辑用户档案。
+//
+// setAdmin 是 isAdmin 的指针语义：nil=请求体没带该字段（UI 回填白名单不含它），
+// 仓储不写该列——绝不能把缺省当 0 落库，否则超管在界面上改任何管理员资料都会
+// 把 is_admin 静默写成 0（且基线只有一个超管账号，界面授不回来）。非 nil 才按
+// 值落库：超管收权必须显式传 0，收回管理员因此仍然可达（修 GORM 零值跳过）。
+func (s *UserService) Edit(ctx context.Context, u *entity.User, roleIds, postIds []string, setAdmin *int, callerId string) error {
 	caller, err := s.loadCaller(ctx, callerId)
 	if err != nil {
 		return err
@@ -161,7 +167,7 @@ func (s *UserService) Edit(ctx context.Context, u *entity.User, roleIds, postIds
 		if target.IsAdmin == 1 { // R3 目标保护
 			return errors.New("没有访问权限：只有超级管理员可以操作管理员账号")
 		}
-		if u.IsAdmin != target.IsAdmin { // R1：非超管不得改动 isAdmin（含写入 1）
+		if setAdmin != nil && *setAdmin != target.IsAdmin { // R1：非超管显式改 isAdmin
 			return errors.New("没有访问权限：只有超级管理员可以设置管理员标识")
 		}
 		if u.UserId == callerId && // R2 自助保护：自己的角色/岗位不得借编辑接口改动
@@ -169,7 +175,7 @@ func (s *UserService) Edit(ctx context.Context, u *entity.User, roleIds, postIds
 			return errors.New("没有访问权限：不能修改自己的角色与岗位")
 		}
 	}
-	if err := s.repo.Edit(ctx, u, roleIds, postIds); err != nil {
+	if err := s.repo.Edit(ctx, u, roleIds, postIds, setAdmin); err != nil {
 		return err
 	}
 	// 姓名/账号变化同步个人目录名（名字未变则 no-op；禁用走 ChangeStatus 不挂钩）

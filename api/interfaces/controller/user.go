@@ -124,9 +124,11 @@ func (h *UserController) Edit(c *gin.Context) {
 		UserId: req.UserId, EmployeeNo: r.EmployeeNo, Name: r.Name,
 		Mobile: r.Mobile, UserNickname: r.NickName,
 		UserStatus: r.Status, UserEmail: r.Email, Sex: r.Sex, DeptId: r.DeptId,
-		Remark: r.Remark, IsAdmin: r.IsAdmin,
+		Remark: r.Remark,
+		// IsAdmin 不进实体：编辑走 req.IsAdmin 指针语义（nil=不写该列），
+		// 实体恒零值让 Updates 跳过该列，见 service.Edit / repo.Edit。
 	}
-	if err := h.svc.Edit(c, u, r.RoleIds, r.PostIds, middleware.GetUserId(c)); err != nil {
+	if err := h.svc.Edit(c, u, r.RoleIds, r.PostIds, req.IsAdmin, middleware.GetUserId(c)); err != nil {
 		middleware.Fail(c, err.Error())
 		return
 	}
