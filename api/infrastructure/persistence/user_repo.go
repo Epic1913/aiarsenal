@@ -46,6 +46,17 @@ func (r *UserRepository) GetUserById(ctx context.Context, userId string) (*model
 	return entityToLogin(&u), nil
 }
 
+// GetSessionUser 会话身份回查：档案 + 岗位 ids，供 JWTAuth 每请求取库内最新身份。
+// 角色维不经此查询（casbin g 表实时解析，本来就不走 claims）。
+func (r *UserRepository) GetSessionUser(ctx context.Context, userId string) (*model.LoginUserRes, error) {
+	u, err := r.GetUserById(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	u.PostIds = r.userPostIds(userId)
+	return u, nil
+}
+
 func (r *UserRepository) UpdateLoginInfo(ctx context.Context, userId string, ip string) error {
 	return r.db.WithContext(ctx).Model(&entity.User{}).Unscoped().
 		Where("user_id = ?", userId).Updates(map[string]interface{}{
@@ -182,6 +193,12 @@ func (r *UserRepository) Add(ctx context.Context, u *entity.User, roleIds, postI
 }
 
 func (r *UserRepository) Edit(ctx context.Context, u *entity.User, roleIds, postIds []string) error {
+	// is_admin 单列显式写：Updates 会跳过零值，超管"收回管理员"（1→0）会静默失效。
+	// 该列能写进来的取值已由服务层闸门保证（R1/R3），这里只负责如实落库。
+	if err := r.db.WithContext(ctx).Model(&entity.User{}).Where("user_id = ?", u.UserId).
+		Update("is_admin", u.IsAdmin).Error; err != nil {
+		return err
+	}
 	if err := r.db.WithContext(ctx).Model(&entity.User{}).Where("user_id = ?", u.UserId).Updates(u).Error; err != nil {
 		return err
 	}

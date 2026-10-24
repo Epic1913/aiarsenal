@@ -12,6 +12,8 @@ type IUserRepository interface {
 	// 登录相关
 	GetUserByUsername(ctx context.Context, userName string) (*model.LoginUserRes, error)
 	GetUserById(ctx context.Context, userId string) (*model.LoginUserRes, error)
+	// GetSessionUser 会话身份回查（JWTAuth 每请求用：档案 + 岗位，isAdmin/状态以库内为准）
+	GetSessionUser(ctx context.Context, userId string) (*model.LoginUserRes, error)
 	UpdateLoginInfo(ctx context.Context, userId string, ip string) error
 	InsertLoginLog(ctx context.Context, params *model.LoginLogParams)
 	InsertUserOnline(ctx context.Context, params *model.UserOnlineParams)
