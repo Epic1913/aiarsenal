@@ -145,3 +145,103 @@ func BenchmarkHashPasswordSha512(b *testing.B) {
 	b.StopTimer()
 	c.Password.Hash.Algorithm, c.Password.Hash.Iterations = oldAlgo, oldIter
 }
+
+// setPepper 临时配置 pepper 并在用例结束后恢复（全局单例，测试间互不污染）。
+func setPepper(t *testing.T, pepper string) {
+	t.Helper()
+	old := config.Get().Password.Hash.Pepper
+	config.Get().Password.Hash.Pepper = pepper
+	t.Cleanup(func() { config.Get().Password.Hash.Pepper = old })
+}
+
+// TestPepperedRoundTrip 配置 pepper 后：新口令落 peppered 档、正确口令可验、
+// 错误口令拒；同口令在掺与不掺下串不同（pepper 真实生效）；关掉 pepper 后
+// peppered 串拒绝（配置丢失的明确失败），重新配上又恢复。
+func TestPepperedRoundTrip(t *testing.T) {
+	setPepper(t, "prverify-pepper-0123456789abcdef0123456789abcdef")
+
+	stored, err := HashPassword("Aiarsenal@2026")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(stored, "$pbkdf2-sm3-peppered$") {
+		t.Fatalf("配置 pepper 后应落 peppered 档：%q", stored[:30])
+	}
+	if !VerifyPassword("Aiarsenal@2026", stored) {
+		t.Fatal("peppered 串正确口令校验失败")
+	}
+	if VerifyPassword("Aiarsenal@2026x", stored) {
+		t.Fatal("peppered 串错误口令通过")
+	}
+
+	// 未掺 pepper 的同口令串必须不同（pepper 真实参与派生）
+	setPepper(t, "")
+	plain, err := HashPassword("Aiarsenal@2026")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plain == stored {
+		t.Fatal("掺 pepper 与不掺生成了相同串")
+	}
+	if !strings.HasPrefix(plain, "$pbkdf2-sm3$") {
+		t.Fatalf("无 pepper 时应回落普通档：%q", plain[:24])
+	}
+
+	// 存量普通串在 pepper 开启后照常校验（开关不影响既有账号）
+	if !VerifyPassword("Aiarsenal@2026", plain) {
+		t.Fatal("开启 pepper 后存量普通串必须照常校验")
+	}
+
+	// peppered 串在 pepper 缺失下拒绝（配置丢失 = 明确失败，不是放行）
+	setPepper(t, "prverify-pepper-0123456789abcdef0123456789abcdef")
+	if !VerifyPassword("Aiarsenal@2026", stored) {
+		t.Fatal("pepper 配回后应恢复校验")
+	}
+	setPepper(t, "")
+	if VerifyPassword("Aiarsenal@2026", stored) {
+		t.Fatal("pepper 缺失时 peppered 串必须拒绝")
+	}
+}
+
+// TestPepperedRoundTrip 的收尾追加两格（审计指出的验证侧缺口）：
+// 换值到不同 pepper 时旧 peppered 串必须拒绝（「不乱认」的半边证据），
+// 以及 sha512-peppered 档整行往返 + 换值拒绝。
+func TestPepperedRotateAndSha512(t *testing.T) {
+	setPepper(t, "prverify-pepper-0123456789abcdef0123456789abcdef")
+	stored, err := HashPassword("Aiarsenal@2026")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !VerifyPassword("Aiarsenal@2026", stored) {
+		t.Fatal("原 pepper 下应通过")
+	}
+	// 换值：旧串必须拒绝
+	setPepper(t, "prverify-pepper-ffffffffffffffffffffffffffffffff")
+	if VerifyPassword("Aiarsenal@2026", stored) {
+		t.Fatal("换 pepper 后旧串必须拒绝（不乱认）")
+	}
+	// 换回原值恢复
+	setPepper(t, "prverify-pepper-0123456789abcdef0123456789abcdef")
+	if !VerifyPassword("Aiarsenal@2026", stored) {
+		t.Fatal("恢复原 pepper 后应重新通过")
+	}
+	// sha512-peppered 档整行
+	c := config.Get()
+	oldAlgo := c.Password.Hash.Algorithm
+	defer func() { c.Password.Hash.Algorithm = oldAlgo }()
+	c.Password.Hash.Algorithm = "pbkdf2-sha512"
+	stored2, err := HashPassword("Aiarsenal@2026")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(stored2, "$pbkdf2-sha512-peppered$") {
+		t.Fatalf("sha512 档应落 sha512-peppered：%q", stored2[:36])
+	}
+	if !VerifyPassword("Aiarsenal@2026", stored2) {
+		t.Fatal("sha512-peppered 往返失败")
+	}
+	setPepper(t, "prverify-pepper-ffffffffffffffffffffffffffffffff")
+	if VerifyPassword("Aiarsenal@2026", stored2) {
+		t.Fatal("sha512-peppered 换值后旧串必须拒绝")
+	}
+}

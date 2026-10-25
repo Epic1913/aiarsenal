@@ -42,6 +42,17 @@ func TestApplyPasswordDefaults(t *testing.T) {
 			},
 		},
 		{
+			name: "rotationDays 负值归一为 0（不启用）",
+			in: PasswordConfig{
+				Policy: PasswordPolicyConfig{Level: "standard", RotationDays: -90},
+			},
+			want: PasswordConfig{
+				Hash:    PasswordHashConfig{Algorithm: "pbkdf2-sm3", Iterations: 60000},
+				Policy:  PasswordPolicyConfig{Level: "standard", RotationDays: 0},
+				Lockout: PasswordLockoutConfig{MaxFailures: 5, LockMinutes: 30},
+			},
+		},
+		{
 			name: "显式配置原样保留",
 			in: PasswordConfig{
 				Hash:    PasswordHashConfig{Algorithm: "pbkdf2-sha512", Iterations: 300000},

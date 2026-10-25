@@ -443,3 +443,31 @@ func TestSameStringSet(t *testing.T) {
 		})
 	}
 }
+
+// UpdateTOTP/GetTOTP：双因子状态的内存实现（键不存在按 not found 语义报错）。
+func (f *fakeUserRepo) UpdateTOTP(ctx context.Context, userId, secretEnc string, enabled int) error {
+	u, ok := f.curUsers[userId]
+	if !ok {
+		return errors.New("record not found")
+	}
+	u.TOTPSecret = secretEnc
+	u.TOTPEnabled = uint(enabled)
+	return nil
+}
+
+func (f *fakeUserRepo) GetTOTP(ctx context.Context, userId string) (string, int, error) {
+	u, ok := f.curUsers[userId]
+	if !ok {
+		return "", 0, errors.New("record not found")
+	}
+	return u.TOTPSecret, int(u.TOTPEnabled), nil
+}
+
+// GetUserById：Setup（otpauth URI 需要账号名）等用例的读路径。
+func (f *fakeUserRepo) GetUserById(ctx context.Context, userId string) (*model.LoginUserRes, error) {
+	u, ok := f.curUsers[userId]
+	if !ok {
+		return nil, errors.New("record not found")
+	}
+	return &model.LoginUserRes{Id: u.UserId, UserName: u.UserName}, nil
+}
