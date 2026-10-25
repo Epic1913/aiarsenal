@@ -5,9 +5,11 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
+	"aiarsenal/config"
 	"aiarsenal/consts"
 	"aiarsenal/domain/model"
 	"aiarsenal/domain/repository"
@@ -42,15 +44,27 @@ func (s *AuthService) Login(ctx context.Context, username, password, verifyKey, 
 		}
 	}
 
-	// 2. 用户名密码
+	// 2. 登录失败锁定（等保 b 项；fail-open 取舍见 login_lockout.go）——密码比对前拦截
+	if auth.LoginLocked(username) {
+		s.userRepo.InsertLoginLog(ctx, &model.LoginLogParams{
+			Status: 0, Username: username, Ip: ip, UserAgent: userAgent,
+			Msg: "失败次数过多，账号已锁定", Module: "系统后台",
+		})
+		return nil, "", nil, nil, fmt.Errorf("失败次数过多，账号已锁定，请 %d 分钟后再试",
+			config.Get().Password.Lockout.LockMinutes)
+	}
+
+	// 3. 用户名密码
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil || user == nil {
+		// 未知用户名不计数：不给攻击者灌 redis 键，也不放大「恶意锁死他人账号」的面
 		s.userRepo.InsertLoginLog(ctx, &model.LoginLogParams{
 			Status: 0, Username: username, Ip: ip, UserAgent: userAgent, Msg: "账号密码错误", Module: "系统后台",
 		})
 		return nil, "", nil, nil, errors.New("账号密码错误")
 	}
-	if auth.EncryptPassword(password, user.UserSalt) != user.UserPassword {
+	if !auth.VerifyPassword(password, user.UserPassword) {
+		auth.RecordLoginFailure(username)
 		s.userRepo.InsertLoginLog(ctx, &model.LoginLogParams{
 			Status: 0, Username: username, Ip: ip, UserAgent: userAgent, Msg: "账号密码错误", Module: "系统后台",
 		})
@@ -59,30 +73,31 @@ func (s *AuthService) Login(ctx context.Context, username, password, verifyKey, 
 	if user.UserStatus == 0 {
 		return nil, "", nil, nil, errors.New("账号已被冻结")
 	}
+	auth.ClearLoginFailures(username)
 
-	// 3. 更新登录信息 + 成功日志
+	// 4. 更新登录信息 + 成功日志
 	_ = s.userRepo.UpdateLoginInfo(ctx, user.Id, ip)
 	s.userRepo.InsertLoginLog(ctx, &model.LoginLogParams{
 		Status: 1, Username: username, Ip: ip, UserAgent: userAgent, Msg: "登录成功", Module: "系统后台",
 	})
 
-	// 4. 签发 JWT（业务 id + IsAdmin + 部门/岗位/工号入 claims，构成权限身份的 claims 侧）
+	// 5. 签发 JWT（业务 id + IsAdmin + 部门/岗位/工号入 claims，构成权限身份的 claims 侧）
 	deptId, postIds, employeeNo, _ := s.userRepo.GetDeptAndPosts(ctx, user.Id)
 	token, err := auth.Generate(user.Id, user.UserName, user.IsAdmin, deptId, postIds, employeeNo)
 	if err != nil {
 		return nil, "", nil, nil, errors.New("登录失败，后端服务出现错误")
 	}
 
-	// 5. 菜单 / 权限
+	// 6. 菜单 / 权限
 	menuList, permissions, err := s.GetAdminRules(ctx, user.Id, user.IsAdmin == 1)
 	if err != nil {
 		return nil, "", nil, nil, err
 	}
 
-	// 6. 清空密码后返回
+	// 7. 清空密码后返回
 	user.UserPassword = ""
 
-	// 7. 在线状态（异步、容错）
+	// 8. 在线状态（异步、容错）
 	go s.userRepo.InsertUserOnline(context.Background(), &model.UserOnlineParams{
 		UserAgent: userAgent,
 		Uuid:      userSaltHash(token),

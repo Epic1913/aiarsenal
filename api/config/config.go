@@ -21,10 +21,86 @@ type Config struct {
 	Storage  StorageConfig  `mapstructure:"storage"`
 	Actor    ActorConfig    `mapstructure:"actor"`
 	Agent    AgentConfig    `mapstructure:"agent"`
+	Password PasswordConfig `mapstructure:"password"`
 
 	// jwtKeyFromFile 标记 jwt.encryptKey 是否直接取自 config.yaml（未被环境变量覆盖）。
 	// 不导出、不参与反序列化，仅由 Load 填入，供 insecureDefaults 上报。
 	jwtKeyFromFile bool
+}
+
+// PasswordConfig 口令加固配置（部署时定档，无管理界面）。三段在 Load 时经
+// applyPasswordDefaults 归一，归一后字段即生效值，消费方直读无需再兜底。
+type PasswordConfig struct {
+	Hash    PasswordHashConfig    `mapstructure:"hash"`
+	Policy  PasswordPolicyConfig  `mapstructure:"policy"`
+	Lockout PasswordLockoutConfig `mapstructure:"lockout"`
+}
+
+type PasswordHashConfig struct {
+	// Algorithm 哈希档位：pbkdf2-sm3（默认，国密 SM3）| pbkdf2-sha512；
+	// 与口令存储串的算法 id 同名（见 infrastructure/auth/password.go）。
+	// 换档只影响之后新产生的口令，存量串按串内参数校验。
+	Algorithm string `mapstructure:"algorithm"`
+	// Iterations PBKDF2 迭代次数；<=0 取算法默认（defaultHashIterations）。
+	// 定档原则：目标部署机上单次派生 50~100ms（README 记录实测值）。
+	Iterations int `mapstructure:"iterations"`
+}
+
+type PasswordPolicyConfig struct {
+	// Level 强度档位：loose | standard（默认，等保基线）| strict。
+	Level string `mapstructure:"level"`
+}
+
+type PasswordLockoutConfig struct {
+	// MaxFailures 连续登录失败锁定阈值；<=0 → 5。
+	MaxFailures int `mapstructure:"maxFailures"`
+	// LockMinutes 锁定时长（分钟，TTL 到期自动解锁）；<=0 → 30。
+	LockMinutes int `mapstructure:"lockMinutes"`
+}
+
+// defaultHashIterations 各算法默认迭代，以「单次派生 50~100ms 登录预算」定档
+// （pbkdf2-sm3@60000 本机 Apple arm64 实测 ≈93ms，纯 Go 实现；部署机应按 README
+// 复测后显式覆盖）。注意这是登录延迟与离线爆破成本的显式权衡：爆破者用的是自己的
+// 优化实现（约快 3.5 倍），60000 迭代的每猜测成本约为 210000 的三成；如需对齐
+// OWASP 迭代量级，上调到 210000（本机 ≈300ms/次）即可，调参即时生效且不影响存量
+// 串校验（参数自描述）。pbkdf2-sha512 走标准库汇编，220000 对齐 OWASP 口令存储
+// 速查表（2026-10 实抓）且实测 ≈60ms。
+var defaultHashIterations = map[string]int{
+	"pbkdf2-sm3":    60000,
+	"pbkdf2-sha512": 220000,
+}
+
+// applyPasswordDefaults 在 Load 时一次性归一口令配置：非法值回落默认并 WARN，
+// 之后消费方直读字段即是生效值（不打热路径、不重复告警）。
+func (c *Config) applyPasswordDefaults() {
+	h := &c.Password.Hash
+	switch h.Algorithm {
+	case "":
+		h.Algorithm = "pbkdf2-sm3"
+	case "pbkdf2-sm3", "pbkdf2-sha512":
+	default:
+		slog.Warn("password.hash.algorithm 非法，回落 pbkdf2-sm3", "given", h.Algorithm)
+		h.Algorithm = "pbkdf2-sm3"
+	}
+	if h.Iterations <= 0 {
+		h.Iterations = defaultHashIterations[h.Algorithm]
+	}
+	p := &c.Password.Policy
+	switch p.Level {
+	case "":
+		p.Level = "standard"
+	case "loose", "standard", "strict":
+	default:
+		slog.Warn("password.policy.level 非法，回落 standard", "given", p.Level)
+		p.Level = "standard"
+	}
+	l := &c.Password.Lockout
+	if l.MaxFailures <= 0 {
+		l.MaxFailures = 5
+	}
+	if l.LockMinutes <= 0 {
+		l.LockMinutes = 30
+	}
 }
 
 // AgentConfig Agent 模块运行配置（v2：实例备份/持久卷等本机落盘路径）。
@@ -146,6 +222,7 @@ func Load() (*Config, error) {
 	if err := v.Unmarshal(c); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
+	c.applyPasswordDefaults()
 	c.jwtKeyFromFile = jwtKeyFromConfigFile(c.Jwt.EncryptKey, yamlJwtKey)
 	c.warnInsecureDefaults()
 	cfg = c
