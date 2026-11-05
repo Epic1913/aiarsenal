@@ -1,7 +1,9 @@
 # AI Arsenal
 
 <div align="center">
-  <a href="https://aiarsenal.cc"><img src="docs/logo.png" alt="AI Arsenal Logo" width="320"></a>
+  <a href="https://epic1913.github.io/aiarsenal/"><img src="docs/logo-eyebrow.svg" alt="AI Arsenal · 浣熊挑眉" width="420"></a>
+
+  [打开挑眉演示，滚动控制表情](https://epic1913.github.io/aiarsenal/)
 </div>
 
 > 企业级 AI 应用一体化管理平台 · 全栈基于 GLM-5.2 构建 · 🌐 官网 [aiarsenal.cc](https://aiarsenal.cc)
